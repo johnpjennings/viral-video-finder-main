@@ -1,0 +1,7 @@
+project_id = "mffncstdrwymxwokruyr"
+
+[functions.youtube-search]
+verify_jwt = false
+
+[functions.trend-finder]
+verify_jwt = false
