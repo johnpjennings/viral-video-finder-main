@@ -32,6 +32,7 @@ const binaryName = platform === "win32" ? "pocketbase.exe" : "pocketbase";
 const binDir = path.resolve(process.cwd(), "bin");
 const targetPath = path.join(binDir, binaryName);
 const legacyPath = path.resolve(process.cwd(), binaryName);
+const metaPath = path.join(binDir, ".pocketbase.json");
 
 if (!fs.existsSync(binDir)) {
   fs.mkdirSync(binDir, { recursive: true });
@@ -41,12 +42,54 @@ if (!fs.existsSync(targetPath) && fs.existsSync(legacyPath)) {
   fs.renameSync(legacyPath, targetPath);
 }
 
-if (fs.existsSync(targetPath)) {
-  if (platform !== "win32") {
-    fs.chmodSync(targetPath, 0o755);
+const expectedMeta = {
+  version: VERSION,
+  platform: mappedPlatform,
+  arch: mappedArch,
+  binaryName,
+};
+
+function readMeta() {
+  if (!fs.existsSync(metaPath)) {
+    return null;
   }
-  console.log(`${binaryName} already exists. Skipping download.`);
-  process.exit(0);
+  try {
+    const raw = fs.readFileSync(metaPath, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function isMetaMatch(meta) {
+  if (!meta) return false;
+  return (
+    meta.version === expectedMeta.version &&
+    meta.platform === expectedMeta.platform &&
+    meta.arch === expectedMeta.arch &&
+    meta.binaryName === expectedMeta.binaryName
+  );
+}
+
+function writeMeta() {
+  fs.writeFileSync(metaPath, `${JSON.stringify(expectedMeta, null, 2)}\n`);
+}
+
+if (fs.existsSync(targetPath)) {
+  const meta = readMeta();
+  if (isMetaMatch(meta)) {
+    if (platform !== "win32") {
+      fs.chmodSync(targetPath, 0o755);
+    }
+    console.log(`${binaryName} already exists and matches this platform. Skipping download.`);
+    process.exit(0);
+  }
+
+  console.log(
+    meta
+      ? "Existing PocketBase binary does not match this platform. Re-downloading."
+      : "Existing PocketBase binary has unknown platform metadata. Re-downloading.",
+  );
 }
 
 const fileName = `pocketbase_${VERSION}_${mappedPlatform}_${mappedArch}.zip`;
@@ -104,6 +147,7 @@ async function main() {
     fs.chmodSync(targetPath, 0o755);
   }
 
+  writeMeta();
   console.log(`PocketBase installed at ${targetPath}`);
 }
 
