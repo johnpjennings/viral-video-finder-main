@@ -165,7 +165,6 @@ routerAdd("POST", "/api/youtube/channel-search", (e) => {
   }
 });
 
-const shortsCacheKey = "__shortsCache";
 const shortsCacheTtlMs = 7 * 24 * 60 * 60 * 1000;
 
 routerAdd("POST", "/api/shorts-check", (e) => {
@@ -174,11 +173,12 @@ routerAdd("POST", "/api/shorts-check", (e) => {
     const id = typeof body.id === "string" ? body.id : "";
     if (!id) return e.json(400, { error: "Missing id" });
     const checkShortsVideo = (shortsId) => {
+      const cacheKey = "__shortsCache";
       const root = typeof globalThis !== "undefined" ? globalThis : this;
-      if (!root[shortsCacheKey]) {
-        root[shortsCacheKey] = new Map();
+      if (!root[cacheKey]) {
+        root[cacheKey] = new Map();
       }
-      const cache = root[shortsCacheKey];
+      const cache = root[cacheKey];
       const now = Date.now();
       const cached = cache.get(shortsId);
       if (cached && cached.expiresAt > now) {
@@ -237,11 +237,12 @@ routerAdd("POST", "/api/shorts-check-batch", (e) => {
     if (ids.length === 0) return e.json(400, { error: "Missing ids" });
 
     const checkShortsVideo = (shortsId) => {
+      const cacheKey = "__shortsCache";
       const root = typeof globalThis !== "undefined" ? globalThis : this;
-      if (!root[shortsCacheKey]) {
-        root[shortsCacheKey] = new Map();
+      if (!root[cacheKey]) {
+        root[cacheKey] = new Map();
       }
-      const cache = root[shortsCacheKey];
+      const cache = root[cacheKey];
       const now = Date.now();
       const cached = cache.get(shortsId);
       if (cached && cached.expiresAt > now) {
