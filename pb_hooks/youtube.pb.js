@@ -165,6 +165,83 @@ routerAdd("POST", "/api/youtube/channel-search", (e) => {
   }
 });
 
+const shortsCache = new Map();
+const shortsCacheTtlMs = 7 * 24 * 60 * 60 * 1000;
+
+const checkShortsVideo = (id) => {
+  const now = Date.now();
+  const cached = shortsCache.get(id);
+  if (cached && cached.expiresAt > now) {
+    return { id, isShorts: cached.isShorts, cached: true };
+  }
+
+  const url = `https://www.youtube.com/shorts/${id}`;
+  let response = $http.send({
+    url,
+    method: "HEAD",
+    headers: {
+      "User-Agent": "PocketBase",
+      Accept: "*/*",
+    },
+    followRedirects: false,
+  });
+
+  if (response.statusCode === 405) {
+    response = $http.send({
+      url,
+      method: "GET",
+      headers: {
+        "User-Agent": "PocketBase",
+        Accept: "*/*",
+      },
+      followRedirects: false,
+    });
+  }
+
+  const status = response.statusCode || 0;
+  const location = response.headers?.location || "";
+  const isShorts =
+    status === 200
+      ? true
+      : [301, 302, 303, 307, 308].includes(status)
+      ? location.includes("/shorts/")
+      : false;
+
+  shortsCache.set(id, { isShorts, expiresAt: now + shortsCacheTtlMs });
+
+  return { id, isShorts, cached: false, status, location };
+};
+
+routerAdd("POST", "/api/shorts-check", (e) => {
+  try {
+    const body = e.requestInfo().body || {};
+    const id = typeof body.id === "string" ? body.id : "";
+    if (!id) return e.json(400, { error: "Missing id" });
+    const result = checkShortsVideo(id);
+    return e.json(200, result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to check shorts";
+    return e.json(500, { error: message });
+  }
+});
+
+routerAdd("POST", "/api/shorts-check-batch", (e) => {
+  try {
+    const body = e.requestInfo().body || {};
+    const ids = Array.isArray(body.ids) ? body.ids : [];
+    if (ids.length === 0) return e.json(400, { error: "Missing ids" });
+
+    const unique = Array.from(new Set(ids)).slice(0, 50);
+    const results = unique.map((id) => checkShortsVideo(id));
+    const map = Object.fromEntries(results.map((item) => [item.id, item.isShorts]));
+
+    return e.json(200, { results: map });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to check shorts";
+    return e.json(500, { error: message });
+  }
+});
+
 routerAdd("POST", "/api/youtube/trend-finder", (e) => {
   const apiKey = $os.getenv("YOUTUBE_API_KEY");
   if (!apiKey) return e.json(500, { error: "YOUTUBE_API_KEY is not configured" });
