@@ -165,7 +165,6 @@ routerAdd("POST", "/api/youtube/channel-search", (e) => {
   }
 });
 
-const shortsCacheTtlMs = 7 * 24 * 60 * 60 * 1000;
 
 routerAdd("POST", "/api/shorts-check", (e) => {
   try {
@@ -217,7 +216,8 @@ routerAdd("POST", "/api/shorts-check", (e) => {
           ? location.includes("/shorts/")
           : false;
 
-      cache.set(shortsId, { isShorts, expiresAt: now + shortsCacheTtlMs });
+      const ttlMs = 7 * 24 * 60 * 60 * 1000;
+      cache.set(shortsId, { isShorts, expiresAt: now + ttlMs });
 
       return { id: shortsId, isShorts, cached: false, status, location };
     };
@@ -281,7 +281,8 @@ routerAdd("POST", "/api/shorts-check-batch", (e) => {
           ? location.includes("/shorts/")
           : false;
 
-      cache.set(shortsId, { isShorts, expiresAt: now + shortsCacheTtlMs });
+      const ttlMs = 7 * 24 * 60 * 60 * 1000;
+      cache.set(shortsId, { isShorts, expiresAt: now + ttlMs });
 
       return { id: shortsId, isShorts, cached: false, status, location };
     };
