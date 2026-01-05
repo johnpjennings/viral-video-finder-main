@@ -25,7 +25,7 @@ npm install
 
 ```sh
 VITE_POCKETBASE_URL=http://127.0.0.1:8090
-VITE_YOUTUBE_API_KEY=your_youtube_api_key
+YOUTUBE_API_KEY=your_youtube_api_key
 ```
 
 4) Start the dev server (PocketBase + Vite)
@@ -57,7 +57,7 @@ npm install
 
 ```powershell
 VITE_POCKETBASE_URL=http://127.0.0.1:8090
-VITE_YOUTUBE_API_KEY=your_youtube_api_key
+YOUTUBE_API_KEY=your_youtube_api_key
 ```
 
 4) Start the dev server (PocketBase + Vite)
@@ -85,7 +85,7 @@ npm install
 
 ```sh
 VITE_POCKETBASE_URL=http://127.0.0.1:8090
-VITE_YOUTUBE_API_KEY=your_youtube_api_key
+YOUTUBE_API_KEY=your_youtube_api_key
 ```
 
 4) Start the dev server (PocketBase + Vite)
@@ -102,12 +102,12 @@ Example `.env` (copy into a new file named `.env`):
 VITE_POCKETBASE_URL=http://127.0.0.1:8090
 
 # YouTube Data API v3
-VITE_YOUTUBE_API_KEY=AIzaSyExampleKeyReplaceMe
+YOUTUBE_API_KEY=AIzaSyExampleKeyReplaceMe
 ```
 
 ## Getting a YouTube API Key
 
-You need a YouTube Data API v3 key to use the app.
+You need a YouTube Data API v3 key to use the app. The key is read by PocketBase on the server so it isn't exposed to the browser.
 
 1) Go to the Google Cloud Console: https://console.cloud.google.com/
 2) Create a new project (or select an existing one).
@@ -115,9 +115,9 @@ You need a YouTube Data API v3 key to use the app.
 4) Search for **YouTube Data API v3** and click **Enable**.
 5) Go to **APIs & Services** → **Credentials**.
 6) Click **Create Credentials** → **API key**.
-7) Copy the key and paste it into your `.env` file as `VITE_YOUTUBE_API_KEY`.
+7) Copy the key and paste it into your `.env` file as `YOUTUBE_API_KEY`.
 
-Tip: You can restrict the key later under **API restrictions** and **HTTP referrers** for extra safety.
+Tip: You can restrict the key later under **API restrictions** and **IP addresses** for extra safety.
 
 ## PocketBase (Local Database)
 
@@ -146,7 +146,7 @@ npm run lint       # lint
 
 ## Troubleshooting
 
-- If the app loads but shows no data, check that `VITE_YOUTUBE_API_KEY` is set.
+- If the app loads but shows no data, check that `YOUTUBE_API_KEY` is set.
 - If PocketBase fails to start, make sure `./bin/pocketbase` exists (re-run `npm install`).
 
 ## Tech Stack
