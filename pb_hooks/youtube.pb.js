@@ -165,51 +165,15 @@ routerAdd("POST", "/api/youtube/channel-search", (e) => {
   }
 });
 
-const shortsCache = new Map();
+const shortsCacheKey = "__shortsCache";
 const shortsCacheTtlMs = 7 * 24 * 60 * 60 * 1000;
 
-const checkShortsVideo = (id) => {
-  const now = Date.now();
-  const cached = shortsCache.get(id);
-  if (cached && cached.expiresAt > now) {
-    return { id, isShorts: cached.isShorts, cached: true };
+const getShortsCache = () => {
+  const root = typeof globalThis !== "undefined" ? globalThis : this;
+  if (!root[shortsCacheKey]) {
+    root[shortsCacheKey] = new Map();
   }
-
-  const url = `https://www.youtube.com/shorts/${id}`;
-  let response = $http.send({
-    url,
-    method: "HEAD",
-    headers: {
-      "User-Agent": "PocketBase",
-      Accept: "*/*",
-    },
-    followRedirects: false,
-  });
-
-  if (response.statusCode === 405) {
-    response = $http.send({
-      url,
-      method: "GET",
-      headers: {
-        "User-Agent": "PocketBase",
-        Accept: "*/*",
-      },
-      followRedirects: false,
-    });
-  }
-
-  const status = response.statusCode || 0;
-  const location = response.headers?.location || "";
-  const isShorts =
-    status === 200
-      ? true
-      : [301, 302, 303, 307, 308].includes(status)
-      ? location.includes("/shorts/")
-      : false;
-
-  shortsCache.set(id, { isShorts, expiresAt: now + shortsCacheTtlMs });
-
-  return { id, isShorts, cached: false, status, location };
+  return root[shortsCacheKey];
 };
 
 routerAdd("POST", "/api/shorts-check", (e) => {
@@ -217,6 +181,51 @@ routerAdd("POST", "/api/shorts-check", (e) => {
     const body = e.requestInfo().body || {};
     const id = typeof body.id === "string" ? body.id : "";
     if (!id) return e.json(400, { error: "Missing id" });
+    const checkShortsVideo = (shortsId) => {
+      const cache = getShortsCache();
+      const now = Date.now();
+      const cached = cache.get(shortsId);
+      if (cached && cached.expiresAt > now) {
+        return { id: shortsId, isShorts: cached.isShorts, cached: true };
+      }
+
+      const url = `https://www.youtube.com/shorts/${shortsId}`;
+      let response = $http.send({
+        url,
+        method: "HEAD",
+        headers: {
+          "User-Agent": "PocketBase",
+          Accept: "*/*",
+        },
+        followRedirects: false,
+      });
+
+      if (response.statusCode === 405) {
+        response = $http.send({
+          url,
+          method: "GET",
+          headers: {
+            "User-Agent": "PocketBase",
+            Accept: "*/*",
+          },
+          followRedirects: false,
+        });
+      }
+
+      const status = response.statusCode || 0;
+      const location = response.headers?.location || "";
+      const isShorts =
+        status === 200
+          ? true
+          : [301, 302, 303, 307, 308].includes(status)
+          ? location.includes("/shorts/")
+          : false;
+
+      cache.set(shortsId, { isShorts, expiresAt: now + shortsCacheTtlMs });
+
+      return { id: shortsId, isShorts, cached: false, status, location };
+    };
+
     const result = checkShortsVideo(id);
     return e.json(200, result);
   } catch (error) {
@@ -230,6 +239,51 @@ routerAdd("POST", "/api/shorts-check-batch", (e) => {
     const body = e.requestInfo().body || {};
     const ids = Array.isArray(body.ids) ? body.ids : [];
     if (ids.length === 0) return e.json(400, { error: "Missing ids" });
+
+    const checkShortsVideo = (shortsId) => {
+      const cache = getShortsCache();
+      const now = Date.now();
+      const cached = cache.get(shortsId);
+      if (cached && cached.expiresAt > now) {
+        return { id: shortsId, isShorts: cached.isShorts, cached: true };
+      }
+
+      const url = `https://www.youtube.com/shorts/${shortsId}`;
+      let response = $http.send({
+        url,
+        method: "HEAD",
+        headers: {
+          "User-Agent": "PocketBase",
+          Accept: "*/*",
+        },
+        followRedirects: false,
+      });
+
+      if (response.statusCode === 405) {
+        response = $http.send({
+          url,
+          method: "GET",
+          headers: {
+            "User-Agent": "PocketBase",
+            Accept: "*/*",
+          },
+          followRedirects: false,
+        });
+      }
+
+      const status = response.statusCode || 0;
+      const location = response.headers?.location || "";
+      const isShorts =
+        status === 200
+          ? true
+          : [301, 302, 303, 307, 308].includes(status)
+          ? location.includes("/shorts/")
+          : false;
+
+      cache.set(shortsId, { isShorts, expiresAt: now + shortsCacheTtlMs });
+
+      return { id: shortsId, isShorts, cached: false, status, location };
+    };
 
     const unique = Array.from(new Set(ids)).slice(0, 50);
     const results = unique.map((id) => checkShortsVideo(id));
